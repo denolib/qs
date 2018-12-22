@@ -1,5 +1,7 @@
 # qs
 
+[![Build Status](https://travis-ci.org/denolib/qs.svg?branch=master)](https://travis-ci.org/denolib/qs)
+
 A querystring parsing and stringifying library with some added security.
 
 The **qs** module was ported from https://github.com/ljharb/qs
