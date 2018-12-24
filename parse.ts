@@ -1,32 +1,32 @@
-import * as utils from './utils'
+import * as utils from "utils.ts";
 
 interface ParseOptions {
-  allowDots?: boolean
-  allowPrototypes?: boolean
-  arrayLimit?: number
-  charset?: string
-  charsetSentinel?: boolean
-  decoder?: typeof utils.decode
-  delimiter?: string | RegExp | boolean
-  depth?: number
-  ignoreQueryPrefix?: boolean
-  interpretNumericEntities?: boolean
-  parameterLimit?: number
-  parseArrays?: boolean
-  plainObjects?: boolean
-  strictNullHandling?: boolean
+  allowDots?: boolean;
+  allowPrototypes?: boolean;
+  arrayLimit?: number;
+  charset?: string;
+  charsetSentinel?: boolean;
+  decoder?: typeof utils.decode;
+  delimiter?: string | RegExp | boolean;
+  depth?: number;
+  ignoreQueryPrefix?: boolean;
+  interpretNumericEntities?: boolean;
+  parameterLimit?: number;
+  parseArrays?: boolean;
+  plainObjects?: boolean;
+  strictNullHandling?: boolean;
 }
 
-const has = Object.prototype.hasOwnProperty
+const has = Object.prototype.hasOwnProperty;
 
 const defaults: ParseOptions = {
   allowDots: false,
   allowPrototypes: false,
   arrayLimit: 20,
-  charset: 'utf-8',
+  charset: "utf-8",
   charsetSentinel: false,
   decoder: utils.decode,
-  delimiter: '&',
+  delimiter: "&",
   depth: 5,
   ignoreQueryPrefix: false,
   interpretNumericEntities: false,
@@ -34,10 +34,12 @@ const defaults: ParseOptions = {
   parseArrays: true,
   plainObjects: false,
   strictNullHandling: false
-}
+};
 
 function interpretNumericEntities(str: string) {
-  return str.replace(/&#(\d+);/g, (_, numberStr) => String.fromCharCode(parseInt(numberStr, 10)))
+  return str.replace(/&#(\d+);/g, (_, numberStr) =>
+    String.fromCharCode(parseInt(numberStr, 10))
+  );
 }
 
 // This is what browsers will submit when the ✓ character occurs in an
@@ -45,81 +47,85 @@ function interpretNumericEntities(str: string) {
 // the form is iso-8859-1, or when the submitted form has an accept-charset
 // attribute of iso-8859-1. Presumably also with other charsets that do not contain
 // the ✓ character, such as us-ascii.
-const isoSentinel = 'utf8=%26%2310003%3B' // encodeURIComponent('&#10003;')
+const isoSentinel = "utf8=%26%2310003%3B"; // encodeURIComponent('&#10003;')
 
 // These are the percent-encoded utf-8 octets representing a checkmark, indicating that the request actually is utf-8 encoded.
-const charsetSentinel = 'utf8=%E2%9C%93' // encodeURIComponent('✓')
+const charsetSentinel = "utf8=%E2%9C%93"; // encodeURIComponent('✓')
 
 function parseValues(str: string, options: ParseOptions) {
-  const obj = {}
-  const cleanStr = options.ignoreQueryPrefix ? str.replace(/^\?/, '') : str
-  const limit = options.parameterLimit === Infinity ? undefined : options.parameterLimit
-  const parts = cleanStr.split(options.delimiter as any, limit)
-  let skipIndex = -1 // Keep track of where the utf8 sentinel was found
-  let i: number
+  const obj = {};
+  const cleanStr = options.ignoreQueryPrefix ? str.replace(/^\?/, "") : str;
+  const limit =
+    options.parameterLimit === Infinity ? undefined : options.parameterLimit;
+  const parts = cleanStr.split(options.delimiter as any, limit);
+  let skipIndex = -1; // Keep track of where the utf8 sentinel was found
+  let i: number;
 
-  let charset = options.charset
+  let charset = options.charset;
   if (options.charsetSentinel) {
     for (i = 0; i < parts.length; ++i) {
-      if (parts[i].indexOf('utf8=') === 0) {
+      if (parts[i].indexOf("utf8=") === 0) {
         if (parts[i] === charsetSentinel) {
-          charset = 'utf-8'
+          charset = "utf-8";
         } else if (parts[i] === isoSentinel) {
-          charset = 'iso-8859-1'
+          charset = "iso-8859-1";
         }
-        skipIndex = i
-        i = parts.length
+        skipIndex = i;
+        i = parts.length;
       }
     }
   }
 
   for (i = 0; i < parts.length; ++i) {
     if (i === skipIndex) {
-      continue
+      continue;
     }
-    const part = parts[i]
+    const part = parts[i];
 
-    const bracketEqualsPos = part.indexOf(']=')
-    const pos = bracketEqualsPos === -1 ? part.indexOf('=') : bracketEqualsPos + 1
+    const bracketEqualsPos = part.indexOf("]=");
+    const pos =
+      bracketEqualsPos === -1 ? part.indexOf("=") : bracketEqualsPos + 1;
 
-    let key: string, val: string
+    let key: string, val: string;
     if (pos === -1) {
-      key = options.decoder(part, defaults.decoder, charset)
-      val = options.strictNullHandling ? null : ''
+      key = options.decoder(part, defaults.decoder, charset);
+      val = options.strictNullHandling ? null : "";
     } else {
-      key = options.decoder(part.slice(0, pos), defaults.decoder, charset)
-      val = options.decoder(part.slice(pos + 1), defaults.decoder, charset)
+      key = options.decoder(part.slice(0, pos), defaults.decoder, charset);
+      val = options.decoder(part.slice(pos + 1), defaults.decoder, charset);
     }
 
-    if (val && options.interpretNumericEntities && charset === 'iso-8859-1') {
-      val = interpretNumericEntities(val)
+    if (val && options.interpretNumericEntities && charset === "iso-8859-1") {
+      val = interpretNumericEntities(val);
     }
     if (has.call(obj, key)) {
-      obj[key] = utils.combine(obj[key], val)
+      obj[key] = utils.combine(obj[key], val);
     } else {
-      obj[key] = val
+      obj[key] = val;
     }
   }
 
-  return obj
+  return obj;
 }
 
 function parseObject(chain, val, options) {
-  let leaf = val
+  let leaf = val;
 
   for (let i = chain.length - 1; i >= 0; --i) {
-    let obj
-    const root = chain[i]
+    let obj;
+    const root = chain[i];
 
-    if (root === '[]' && options.parseArrays) {
-      obj = [].concat(leaf)
+    if (root === "[]" && options.parseArrays) {
+      obj = [].concat(leaf);
     } else {
-      obj = options.plainObjects ? Object.create(null) : {}
+      obj = options.plainObjects ? Object.create(null) : {};
       const cleanRoot =
-        root.charAt(0) === '[' && root.charAt(root.length - 1) === ']' ? root.slice(1, -1) : root
-      const index = parseInt(cleanRoot, 10)
-      if (!options.parseArrays && cleanRoot === '') {
-        obj = { 0: leaf }
+        root.charAt(0) === "[" && root.charAt(root.length - 1) === "]"
+          ? root.slice(1, -1)
+          : root;
+      const index = parseInt(cleanRoot, 10);
+      if (!options.parseArrays && cleanRoot === "") {
+        obj = { 0: leaf };
       } else if (
         !isNaN(index) &&
         root !== cleanRoot &&
@@ -127,135 +133,152 @@ function parseObject(chain, val, options) {
         index >= 0 &&
         (options.parseArrays && index <= options.arrayLimit)
       ) {
-        obj = []
-        obj[index] = leaf
+        obj = [];
+        obj[index] = leaf;
       } else {
-        obj[cleanRoot] = leaf
+        obj[cleanRoot] = leaf;
       }
     }
 
-    leaf = obj
+    leaf = obj;
   }
 
-  return leaf
+  return leaf;
 }
 
 const parseKeys = function parseQueryStringKeys(givenKey, val, options) {
   if (!givenKey) {
-    return
+    return;
   }
 
   // Transform dot notation to bracket notation
-  const key = options.allowDots ? givenKey.replace(/\.([^.[]+)/g, '[$1]') : givenKey
+  const key = options.allowDots
+    ? givenKey.replace(/\.([^.[]+)/g, "[$1]")
+    : givenKey;
 
   // The regex chunks
 
-  const brackets = /(\[[^[\]]*])/
-  const child = /(\[[^[\]]*])/g
+  const brackets = /(\[[^[\]]*])/;
+  const child = /(\[[^[\]]*])/g;
 
   // Get the parent
 
-  let segment = brackets.exec(key)
-  const parent = segment ? key.slice(0, segment.index) : key
+  let segment = brackets.exec(key);
+  const parent = segment ? key.slice(0, segment.index) : key;
 
   // Stash the parent if it exists
 
-  const keys = []
+  const keys = [];
   if (parent) {
     // If we aren't using plain objects, optionally prefix keys that would overwrite object prototype properties
     if (!options.plainObjects && has.call(Object.prototype, parent)) {
       if (!options.allowPrototypes) {
-        return
+        return;
       }
     }
 
-    keys.push(parent)
+    keys.push(parent);
   }
 
   // Loop through children appending to the array until we hit depth
 
-  let i = 0
+  let i = 0;
   while ((segment = child.exec(key)) !== null && i < options.depth) {
-    i += 1
-    if (!options.plainObjects && has.call(Object.prototype, segment[1].slice(1, -1))) {
+    i += 1;
+    if (
+      !options.plainObjects &&
+      has.call(Object.prototype, segment[1].slice(1, -1))
+    ) {
       if (!options.allowPrototypes) {
-        return
+        return;
       }
     }
-    keys.push(segment[1])
+    keys.push(segment[1]);
   }
 
   // If there's a remainder, just add whatever is left
 
   if (segment) {
-    keys.push('[' + key.slice(segment.index) + ']')
+    keys.push("[" + key.slice(segment.index) + "]");
   }
 
-  return parseObject(keys, val, options)
-}
+  return parseObject(keys, val, options);
+};
 
 export function parse(str: any, opts?: ParseOptions) {
-  const options = (opts ? utils.assign({}, opts) : {}) as ParseOptions
+  const options = (opts ? utils.assign({}, opts) : {}) as ParseOptions;
 
   if (
     options.decoder !== null &&
     options.decoder !== undefined &&
-    typeof options.decoder !== 'function'
+    typeof options.decoder !== "function"
   ) {
-    throw new TypeError('Decoder has to be a function.')
+    throw new TypeError("Decoder has to be a function.");
   }
 
-  options.ignoreQueryPrefix = options.ignoreQueryPrefix === true
+  options.ignoreQueryPrefix = options.ignoreQueryPrefix === true;
   options.delimiter =
-    typeof options.delimiter === 'string' || utils.isRegExp(options.delimiter)
+    typeof options.delimiter === "string" || utils.isRegExp(options.delimiter)
       ? options.delimiter
-      : defaults.delimiter
-  options.depth = typeof options.depth === 'number' ? options.depth : defaults.depth
+      : defaults.delimiter;
+  options.depth =
+    typeof options.depth === "number" ? options.depth : defaults.depth;
   options.arrayLimit =
-    typeof options.arrayLimit === 'number' ? options.arrayLimit : defaults.arrayLimit
-  options.parseArrays = options.parseArrays !== false
-  options.decoder = typeof options.decoder === 'function' ? options.decoder : defaults.decoder
+    typeof options.arrayLimit === "number"
+      ? options.arrayLimit
+      : defaults.arrayLimit;
+  options.parseArrays = options.parseArrays !== false;
+  options.decoder =
+    typeof options.decoder === "function" ? options.decoder : defaults.decoder;
   options.allowDots =
-    typeof options.allowDots === 'undefined' ? defaults.allowDots : !!options.allowDots
+    typeof options.allowDots === "undefined"
+      ? defaults.allowDots
+      : !!options.allowDots;
   options.plainObjects =
-    typeof options.plainObjects === 'boolean' ? options.plainObjects : defaults.plainObjects
+    typeof options.plainObjects === "boolean"
+      ? options.plainObjects
+      : defaults.plainObjects;
   options.allowPrototypes =
-    typeof options.allowPrototypes === 'boolean'
+    typeof options.allowPrototypes === "boolean"
       ? options.allowPrototypes
-      : defaults.allowPrototypes
+      : defaults.allowPrototypes;
   options.parameterLimit =
-    typeof options.parameterLimit === 'number' ? options.parameterLimit : defaults.parameterLimit
+    typeof options.parameterLimit === "number"
+      ? options.parameterLimit
+      : defaults.parameterLimit;
   options.strictNullHandling =
-    typeof options.strictNullHandling === 'boolean'
+    typeof options.strictNullHandling === "boolean"
       ? options.strictNullHandling
-      : defaults.strictNullHandling
+      : defaults.strictNullHandling;
 
   if (
-    typeof options.charset !== 'undefined' &&
-    options.charset !== 'utf-8' &&
-    options.charset !== 'iso-8859-1'
+    typeof options.charset !== "undefined" &&
+    options.charset !== "utf-8" &&
+    options.charset !== "iso-8859-1"
   ) {
-    throw new Error('The charset option must be either utf-8, iso-8859-1, or undefined')
+    throw new Error(
+      "The charset option must be either utf-8, iso-8859-1, or undefined"
+    );
   }
-  if (typeof options.charset === 'undefined') {
-    options.charset = defaults.charset
-  }
-
-  if (str === '' || str === null || typeof str === 'undefined') {
-    return options.plainObjects ? Object.create(null) : {}
+  if (typeof options.charset === "undefined") {
+    options.charset = defaults.charset;
   }
 
-  const tempObj = typeof str === 'string' ? parseValues(str, options) : str
-  let obj = options.plainObjects ? Object.create(null) : {}
+  if (str === "" || str === null || typeof str === "undefined") {
+    return options.plainObjects ? Object.create(null) : {};
+  }
+
+  const tempObj = typeof str === "string" ? parseValues(str, options) : str;
+  let obj = options.plainObjects ? Object.create(null) : {};
 
   // Iterate over the keys and setup the new object
 
-  const keys = Object.keys(tempObj)
+  const keys = Object.keys(tempObj);
   for (let i = 0; i < keys.length; ++i) {
-    const key = keys[i]
-    const newObj = parseKeys(key, tempObj[key], options)
-    obj = utils.merge(obj, newObj, options)
+    const key = keys[i];
+    const newObj = parseKeys(key, tempObj[key], options);
+    obj = utils.merge(obj, newObj, options);
   }
 
-  return utils.compact(obj)
+  return utils.compact(obj);
 }
