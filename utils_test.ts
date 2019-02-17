@@ -1,8 +1,7 @@
-import { assertEqual, equal } from "https://deno.land/x/testing/testing.ts";
-import { t } from "https://raw.githubusercontent.com/zhmushan/deno_test/master/index.ts";
+import { assertEqual, equal, test } from "https://deno.land/x/testing/mod.ts";
 import * as utils from "utils.ts";
 
-t("merge()", function() {
+test({ name: "merge()", fn: () => {
   assertEqual(
     utils.merge({ a: "b" }, { a: "c" }),
     { a: ["b", "c"] },
@@ -41,9 +40,9 @@ t("merge()", function() {
 
   const noOptionsNonObjectSource = utils.merge({ foo: "baz" }, "bar");
   assertEqual(noOptionsNonObjectSource, { foo: "baz", bar: true });
-});
+}});
 
-t("avoids invoking array setters unnecessarily", function() {
+test({ name: "avoids invoking array setters unnecessarily", fn: () => {
   let setCount = 0;
   let getCount = 0;
   const observed = [];
@@ -62,9 +61,9 @@ t("avoids invoking array setters unnecessarily", function() {
   observed[0] = observed[0];
   assertEqual(setCount, 1);
   assertEqual(getCount, 3);
-});
+}});
 
-t("assign()", function() {
+test({ name: "assign()", fn: () => {
   const target = { a: 1, b: 2 };
   const source = { b: 3, c: 4 };
   const result = utils.assign(target, source);
@@ -72,9 +71,9 @@ t("assign()", function() {
   assertEqual(result, target, "returns the target");
   assertEqual(target, { a: 1, b: 3, c: 4 }, "target and source are merged");
   assertEqual(source, { b: 3, c: 4 }, "source is untouched");
-});
+}});
 
-t("both arrays", function() {
+test({ name: "both arrays", fn: () => {
   const a = [1];
   const b = [2];
   const combined = utils.combine(a, b);
@@ -84,9 +83,9 @@ t("both arrays", function() {
   assertEqual(equal(a, combined), false, "a !== combined");
   assertEqual(equal(b, combined), false, "b !== combined");
   assertEqual(combined, [1, 2], "combined is a + b");
-});
+}});
 
-t("one array, one non-array", function() {
+test({ name: "one array, one non-array", fn: () => {
   const aN = 1;
   const a = [aN];
   const bN = 2;
@@ -115,9 +114,9 @@ t("one array, one non-array", function() {
     combinedABn,
     "second argument is array-wrapped when not an array"
   );
-});
+}});
 
-t("neither is an array", function() {
+test({ name: "neither is an array", fn: () => {
   const combined = utils.combine(1, 2);
   assertEqual(equal(1, combined), false, "1 + 2 !== 1");
   assertEqual(equal(2, combined), false, "1 + 2 !== 2");
@@ -126,4 +125,4 @@ t("neither is an array", function() {
     combined,
     "both arguments are array-wrapped when not an array"
   );
-});
+}});

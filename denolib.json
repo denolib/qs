@@ -1,0 +1,9 @@
+{
+  "name": "qs",
+  "keywords": [
+    "encoding",
+    "querystring",
+    "stringify",
+    "parse"
+  ]
+}
