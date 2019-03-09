@@ -1,5 +1,5 @@
-import * as utils from "utils.ts";
-import { formats } from "formats.ts";
+import * as utils from "./utils.ts";
+import { formats } from "./formats.ts";
 
 interface StringifyOptions {
   addQueryPrefix?: boolean;

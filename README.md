@@ -1,7 +1,7 @@
 # qs
 
 ![DenoLib](https://denolib.com/badge?scope=denolib&repo=qs)
-[![Build Status](https://img.shields.io/travis/denolib/qs.svg?style=flat-square)](https://travis-ci.org/denolib/qs)
+[![Build Status](https://img.shields.io/travis/denolib/qs.svg)](https://travis-ci.org/denolib/qs)
 
 A querystring parsing and stringifying library with some added security.
 
